@@ -31,14 +31,6 @@ declare module "next-auth" {
   // }
 }
 
-export const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(4),
-});
-
-export const registerSchema = loginSchema.extend({
-  username: z.string(),
-});
 
 /**
  * Options for NextAuth.js used to configure adapters, providers, callbacks, etc.
@@ -77,20 +69,20 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       authorize: async (credentials) => {
-        const cred = await loginSchema.parseAsync(credentials);
-
-        const user = await prisma.user.findFirst({
-          where: { email: cred.email },
-        });
-
-        if (!user) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-        };
+        // const cred = await loginSchema.parseAsync(credentials);
+        //
+        // const user = await prisma.user.findFirst({
+        //   where: { email: cred.email },
+        // });
+        //
+        // if (!user) {
+        //   return null;
+        // }
+        //
+        // return {
+        //   id: user.id,
+        //   email: user.email,
+        // };
       },
     }),
   ],
