@@ -8,7 +8,8 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { env } from "@/env.mjs";
 import { prisma } from "@/server/db";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { z } from "zod";
+import { UserSchema } from "./api/routers/auth";
+import crypto from "crypto";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -31,7 +32,6 @@ declare module "next-auth" {
   // }
 }
 
-
 /**
  * Options for NextAuth.js used to configure adapters, providers, callbacks, etc.
  *
@@ -40,7 +40,7 @@ declare module "next-auth" {
 export const authOptions: NextAuthOptions = {
   secret: env.NEXTAUTH_SECRET,
   callbacks: {
-    jwt: async ({ token, user }) => {
+    jwt: ({ token, user }) => {
       if (user) {
         token.id = user.id;
         token.email = user.email;
@@ -62,27 +62,36 @@ export const authOptions: NextAuthOptions = {
       name: "Credentials",
       credentials: {
         email: {
-          label: "Email",
-          type: "email",
-          placeholder: "jsmith@gmail.com",
+          label: "Username",
+          type: "text",
+          placeholder: "Nsttt",
         },
         password: { label: "Password", type: "password" },
       },
       authorize: async (credentials) => {
-        // const cred = await loginSchema.parseAsync(credentials);
-        //
-        // const user = await prisma.user.findFirst({
-        //   where: { email: cred.email },
-        // });
-        //
-        // if (!user) {
-        //   return null;
-        // }
-        //
-        // return {
-        //   id: user.id,
-        //   email: user.email,
-        // };
+        const cred = await UserSchema.parseAsync(credentials);
+
+        const user = await prisma.user.findFirst({
+          where: { username: cred.username },
+        });
+
+        if (!user) {
+          return null;
+        }
+
+        const isValidPassword =
+          crypto
+            .pbkdf2Sync(user.password, env.NEXTAUTH_SECRET, 1000, 64, `sha512`)
+            .toString(`hex`) === cred.password;
+
+        if (!isValidPassword) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          username: user.username,
+        };
       },
     }),
   ],
