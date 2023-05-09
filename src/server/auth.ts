@@ -1,15 +1,16 @@
+import crypto from "crypto";
 import { type GetServerSidePropsContext } from "next";
-import {
-  getServerSession,
-  type NextAuthOptions,
-  type DefaultSession,
-} from "next-auth";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { env } from "@/env.mjs";
 import { prisma } from "@/server/db";
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import {
+  getServerSession,
+  type DefaultSession,
+  type NextAuthOptions,
+} from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+
 import { UserSchema } from "./api/routers/auth";
-import crypto from "crypto";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -31,6 +32,13 @@ declare module "next-auth" {
   //   // role: UserRole;
   // }
 }
+
+const getUser = async (username: string) => {
+  const user = await prisma.user.findFirst({
+    where: { username },
+  });
+  return user;
+};
 
 /**
  * Options for NextAuth.js used to configure adapters, providers, callbacks, etc.
@@ -71,9 +79,7 @@ export const authOptions: NextAuthOptions = {
       authorize: async (credentials) => {
         const cred = await UserSchema.parseAsync(credentials);
 
-        const user = await prisma.user.findFirst({
-          where: { username: cred.username },
-        });
+        const user = await getUser(cred.username);
 
         if (!user) {
           return null;

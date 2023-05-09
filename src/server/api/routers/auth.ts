@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { prisma } from "@/server/db";
 import { TRPCError } from "@trpc/server";
 import crypto from "crypto";
@@ -30,7 +30,7 @@ export const authRouter = createTRPCRouter({
         env.NEXTAUTH_SECRET,
         1000,
         64,
-        "sha512"
+        "sha512",
       );
 
       await prisma.user.create({
